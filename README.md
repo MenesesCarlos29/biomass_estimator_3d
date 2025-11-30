@@ -16,7 +16,7 @@ The pipeline is structured into three distinct stages:
 
 3.  **Biometric Estimation (Convex Hull):**
     The system computes the Convex Hull of the cleaned point cloud.
-    * **Algorithm Choice:** The Convex Hull was selected over Voxel Grids for its computational efficiency ($O(n \log n)$) and its robustness as a standard proxy for "Fresh Weight" (biomass) in agronomic studies.
+    * **Algorithm Choice:** The Convex Hull was selected over Voxel Grids for its computational efficiency O(n log n) and its robustness as a standard proxy for "Fresh Weight" (biomass) in agronomic studies.
 
 ## Visualization
 The image below illustrates the output of the pipeline: the cleaned synthetic plant (Green) enclosed by the calculated Convex Hull wireframe (Red), representing the estimated volume.
