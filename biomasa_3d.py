@@ -1,6 +1,6 @@
 import open3d as o3d
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Optional
 
 def generate_synthetic_bush(n_points: int = 2000) -> o3d.geometry.PointCloud:
     """
@@ -20,7 +20,7 @@ def generate_synthetic_bush(n_points: int = 2000) -> o3d.geometry.PointCloud:
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(all_points)
-    pcd.paint_uniform_color([0, 0.4, 0])
+    pcd.paint_uniform_color([0, 0.4, 0]) # Dark Green
     
     return pcd
 
@@ -30,23 +30,57 @@ def preprocess_point_cloud(pcd: o3d.geometry.PointCloud) -> o3d.geometry.PointCl
     """
     # nb_neighbors=20, std_ratio=2.0 are standard empirical values for vegetation
     cl, ind = pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=2.0)
-    
     clean_pcd = pcd.select_by_index(ind)
     
-    # Visual feedback: Original noise points count
-    noise_count = len(pcd.points) - len(clean_pcd.points)
-    print(f"Preprocessing complete. Removed {noise_count} outlier points.")
-    
+    print(f"Preprocessing: Removed {len(pcd.points) - len(clean_pcd.points)} noise points.")
     return clean_pcd
+
+def calculate_biomass_volume(pcd: o3d.geometry.PointCloud) -> Tuple[float, o3d.geometry.TriangleMesh]:
+    """
+    Computes the Convex Hull of the point cloud to estimate volumetric biomass.
+    Returns the volume (m3) and the mesh for visualization.
+    """
+    hull_mesh, _ = pcd.compute_convex_hull()
+    
+    # Check if hull is watertight for accurate volume calculation
+    if hull_mesh.is_watertight():
+        volume = hull_mesh.get_volume()
+    else:
+        # Fallback for non-watertight meshes (rare with Convex Hull)
+        volume = 0.0
+        print("Warning: Generated hull is not watertight.")
+
+    return volume, hull_mesh
+
+def visualize_results(pcd: o3d.geometry.PointCloud, hull_mesh: o3d.geometry.TriangleMesh):
+    """
+    Renders the point cloud and the wireframe of the convex hull.
+    """
+    # Create a wireframe for the hull to visualize the enclosure without hiding points
+    hull_wireframe = o3d.geometry.LineSet.create_from_triangle_mesh(hull_mesh)
+    hull_wireframe.paint_uniform_color([1, 0, 0]) # Red for the bounding volume
+
+    o3d.visualization.draw_geometries(
+        [pcd, hull_wireframe], 
+        window_name="Farm3 Demo: Biomass Estimation",
+        width=1024, height=768,
+        left=50, top=50
+    )
 
 if __name__ == "__main__":
     print("--- 3D Biomass Estimation PoC ---")
     
-    # 1. Generation
+    # 1. Data Ingestion
     raw_pcd = generate_synthetic_bush()
     
     # 2. Preprocessing
     clean_pcd = preprocess_point_cloud(raw_pcd)
     
-    # Visual check: Cleaned data
-    o3d.visualization.draw_geometries([clean_pcd], window_name="Cleaned Data Check")
+    # 3. Analysis (Convex Hull)
+    volume, hull_mesh = calculate_biomass_volume(clean_pcd)
+    
+    print(f"Estimated Volumetric Biomass: {volume:.4f} m3")
+    print(f"Note: Volume serves as a proxy for fresh weight in yield prediction models.")
+    
+    # 4. Visualization
+    visualize_results(clean_pcd, hull_mesh)
