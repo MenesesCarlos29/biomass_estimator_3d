@@ -33,7 +33,7 @@ The image below illustrates the output of the pipeline: the cleaned synthetic pl
 ### Setup
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/3d-biomass-estimation.git](https://github.com/YOUR_USERNAME/3d-biomass-estimation.git)
+    git clone https://github.com/MenesesCarlos29/biomass_estimator_3d
     cd 3d-biomass-estimation
     ```
 
